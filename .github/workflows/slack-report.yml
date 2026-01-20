@@ -3,7 +3,7 @@ name: Playwright E2E + Slack Report
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   e2e:

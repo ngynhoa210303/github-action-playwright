@@ -1,0 +1,62 @@
+name: Playwright E2E + Slack Report
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+    inputs:
+      send_report:
+        description: "Send Slack report?"
+        required: true
+        default: "true"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright Tests
+        run: npx playwright test --reporter=json
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+
+      - name: Extract test results
+        id: results
+        run: |
+          TOTAL=$(jq '.stats.expected + .stats.unexpected + .stats.skipped' playwright-report/report.json)
+          PASS=$(jq '.stats.expected' playwright-report/report.json)
+          FAIL=$(jq '.stats.unexpected' playwright-report/report.json)
+
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "pass=$PASS" >> $GITHUB_OUTPUT
+          echo "fail=$FAIL" >> $GITHUB_OUTPUT
+
+      - name: Send Slack Report
+        if: ${{ inputs.send_report == 'true' }}
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "🎭 *Playwright Test Report (MASTER)*\n\n📊 *Summary:*\n• Total: ${{ steps.results.outputs.total }}\n• ✅ Pass: ${{ steps.results.outputs.pass }}\n• ❌ Fail: ${{ steps.results.outputs.fail }}\n\n🔗 Repo: ${{ github.repository }}\n🔄 Commit: ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
