@@ -36,9 +36,9 @@ jobs:
       - name: Extract test results
         id: results
         run: |
-          TOTAL=$(jq '.stats.expected + .stats.unexpected + .stats.skipped' report.json)
-          PASS=$(jq '.stats.expected' report.json)
-          FAIL=$(jq '.stats.unexpected' report.json)
+          TOTAL=$(jq '.stats.expected + .stats.unexpected + .stats.skipped' playwright-report/report.json)
+          PASS=$(jq '.stats.expected' playwright-report/report.json)
+          FAIL=$(jq '.stats.unexpected' playwright-report/report.json)
 
           echo "total=$TOTAL" >> $GITHUB_OUTPUT
           echo "pass=$PASS" >> $GITHUB_OUTPUT
